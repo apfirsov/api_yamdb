@@ -9,6 +9,12 @@ class User(AbstractUser):
         MODERATOR = 'MOD', 'Модератор'
         ADMIN = 'ADM', 'Администратор'
 
+    first_name = models.CharField(
+        'Имя',
+        max_length=150,
+        blank=True
+    )
+
     email = models.EmailField(
         'Адрес электронной почты',
         max_length=254,
