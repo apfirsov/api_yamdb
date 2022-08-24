@@ -1,6 +1,6 @@
-from django.apps import TitlesConfig
+from django.apps import AppConfig
 
 
-class UsersConfig(TitlesConfig):
+class TitlesConfig(AppConfig):
     name = 'titles'
     verbose_name = 'Произведения'
