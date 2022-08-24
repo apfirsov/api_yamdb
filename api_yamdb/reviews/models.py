@@ -6,21 +6,25 @@ from titles.models import Title
 User = get_user_model()
 
 
-class PubDateModel(models.Model):
-    """Abstract model for pub date."""
+class TextPubDateModel(models.Model):
+    """Abstract model for text and pub date."""
 
+    text = models.TextField('Текст')
     pub_date = models.DateTimeField('Дата', auto_now_add=True)
 
     class Meta:
         abstract = True
 
+    def __str__(self):
+        text_str_length = 15
+        return self.text[:text_str_length]
 
-class Review(PubDateModel):
+
+class Review(TextPubDateModel):
     """Review model class."""
 
     title = models.ForeignKey(
         Title, on_delete=models.CASCADE, verbose_name='Произведение')
-    text = models.TextField('Текст')
     author = models.ForeignKey(
         User, on_delete=models.CASCADE, verbose_name='Автор')
     score = models.PositiveSmallIntegerField(
@@ -41,24 +45,16 @@ class Review(PubDateModel):
         ]
 
 
-    def __str__(self):
-        return self.text
-
-
-class Comment(PubDateModel):
+class Comment(TextPubDateModel):
     """Comment model class."""
 
     author = models.ForeignKey(
         User, on_delete=models.CASCADE, verbose_name='Автор')
     review = models.ForeignKey(
         Review, on_delete=models.CASCADE, verbose_name='Отзыв')
-    text = models.TextField('Текст')
 
     class Meta:
         ordering = ['-pub_date']
         default_related_name = 'comments'
         verbose_name = 'Комментарий'
         verbose_name_plural = 'Комментарии'
-
-    def __str__(self):
-        return f'{self.author} - {self.text}'
