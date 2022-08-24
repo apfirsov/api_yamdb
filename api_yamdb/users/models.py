@@ -4,10 +4,15 @@ from django.db import models
 
 class User(AbstractUser):
 
-    class UserRoles(models.TextChoices):
-        USER = 'USR', 'Пользователь'
-        MODERATOR = 'MOD', 'Модератор'
-        ADMIN = 'ADM', 'Администратор'
+    USER = 'user'
+    MODERATOR = 'moderator'
+    ADMIN = 'admin'
+
+    ROLE_CHOICES = (
+        (USER, 'Пользователь'),
+        (MODERATOR, 'Модератор'),
+        (ADMIN, 'Администратор')
+    )
 
     first_name = models.CharField(
         'Имя',
@@ -23,8 +28,8 @@ class User(AbstractUser):
     role = models.CharField(
         'Роль',
         max_length=3,
-        choices=UserRoles.choices,
-        default=UserRoles.USER
+        choices=ROLE_CHOICES,
+        default=ROLE_CHOICES.USER
     )
     bio = models.TextField(
         'Биография',
