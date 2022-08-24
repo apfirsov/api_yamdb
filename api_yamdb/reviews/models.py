@@ -5,7 +5,6 @@ from titles.models import Title
 
 User = get_user_model()
 
-
 class TextPubDateModel(models.Model):
     """Abstract model for text and pub date."""
 
@@ -29,7 +28,6 @@ class Review(TextPubDateModel):
         User, on_delete=models.CASCADE, verbose_name='Автор')
     score = models.PositiveSmallIntegerField(
         'Оценка',
-        max_length=2,
         validators=(MinValueValidator(1), MaxValueValidator(10))
     )
 

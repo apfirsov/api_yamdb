@@ -18,14 +18,12 @@ class Categorie(models.Model):
 
 
 class Title(models.Model):
-    name = models.CharField()
-    year = models.IntegerField(max_length=4)
+    name = models.TextField()
+    year = models.IntegerField()
     description = models.TextField(null=True, blank=True)
     genre = models.ManyToManyField(
         Genre,
-        through='GenreTitle',
-        on_delete=models.SET_NULL,
-        null=True
+        through='GenreTitle'
     )
     category = models.ForeignKey(
         Categorie,
