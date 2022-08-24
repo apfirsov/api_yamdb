@@ -23,7 +23,7 @@ class Title(models.Model):
     description = models.TextField(null=True, blank=True)
     genre = models.ManyToManyField(
         Genre,
-        through='GenresTitles',
+        through='GenreTitle',
         on_delete=models.SET_NULL,
         null=True
     )
