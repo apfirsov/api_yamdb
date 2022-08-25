@@ -9,7 +9,7 @@ class Genre(models.Model):
         return self.name
 
 
-class Categorie(models.Model):
+class Category(models.Model):
     name = models.CharField(max_length=256)
     slug = models.SlugField(unique=True, max_length=50)
 
@@ -26,7 +26,7 @@ class Title(models.Model):
         through='GenreTitle'
     )
     category = models.ForeignKey(
-        Categorie,
+        Category,
         related_name='titles',
         on_delete=models.SET_NULL,
         null=True
