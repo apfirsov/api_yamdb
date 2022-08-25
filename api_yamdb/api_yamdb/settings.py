@@ -26,8 +26,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'titles.apps.TitlesConfig',
     'reviews.apps.ReviewsConfig',
-
-]
+    'core.apps.CoreConfig',
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
