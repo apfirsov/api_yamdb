@@ -1,14 +1,15 @@
 import csv
 import os
+from pprint import pprint
+
+from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
-# from polls.models import Question as Poll
+from titles.models import Categorie as Category, Genre, GenreTitle, Title
+from reviews.models import Comment, Review
 
+User = get_user_model()
 
-Title = None
-User = None
-Category = None
-Genre = None
 
 ALREDY_LOADED_ERROR_MESSAGE = """
 If you need to reload the example data from the CSV file,
@@ -16,10 +17,13 @@ first delete the db.sqlite3 file to destroy the database.
 Then, run `python manage.py migrate` for a new empty
 database with tables."""
 
+
 class Command(BaseCommand):
     """Provide loading example data form /static/data to DB."""
 
     help = "Loads example data from /static/data"
+    requires_migrations_checks = True
+    output_transaction = True
 
     def handle(self, *args, **options):
         if Title.objects.exists():
@@ -28,35 +32,87 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.NOTICE('Start loading...'))
 
-        files = [
-            ('users.csv', User, False),
-            ('category.csv', Category, True),
-            ('genre.csv', Genre, True),
-            ('titles.csv', Title, True),
-            ('genre_title.csv', GenreTitle, True),
-            ('review.csv', Review, True),
-            ('comments.csv', Comments, True),
-        ]
-
-        for filename, model, bulk_load in files:
-            path = os.path.join(settings.BASE_DIR, 'static', 'data', filename)
-
-            with open(path, newline='') as csvfile:
-                try:
-                    reader = csv.DictReader(csvfile)
-
-                    if bulk_load:
-                        obj_list = [model(**row) for row in reader]
-                        model.objects.bulk_create(objs=obj_list)
-                    else:
-                        for row in reader:
-                            obj = model(**row)
-                            obj.save()
-
-                    self.stdout.write(self.style.NOTICE(f'{filename} done...'))
-
-                except Exception as err:
-                    raise CommandError(
-                        f'Failed load {filename}, reason: {err}')
+        try:
+            self._load_data()
+        except Exception as err:
+            raise CommandError(
+                f'Failed load {err.args}, reason: {err}')
 
         self.stdout.write(self.style.SUCCESS('Loading done.'))
+
+    def _load_data(self):
+        def get_file_path(filename):
+            return os.path.join(settings.BASE_DIR, 'static', 'data', filename)
+
+        categories = {}
+        genres = {}
+        titles = {}
+        reviews = {}
+        users = {}
+
+        path = get_file_path('users.csv')
+        with open(path, encoding='utf-8', newline='') as csvfile:
+            for row in csv.DictReader(csvfile):
+                obj = User(**row)
+                obj.save()
+                users[obj.id] = obj
+        self.stdout.write(self.style.NOTICE(f'{path} done...'))
+
+        pprint(users)
+        path = get_file_path('category.csv')
+        with open(path, encoding='utf-8', newline='') as csvfile:
+            for row in csv.DictReader(csvfile):
+                obj = Category(**row)
+                categories[obj.id] = obj
+            Category.objects.bulk_create(objs=categories.values())
+        self.stdout.write(self.style.NOTICE(f'{path} done...'))
+
+        path = get_file_path('genre.csv')
+        with open(path, encoding='utf-8', newline='') as csvfile:
+            for row in csv.DictReader(csvfile):
+                obj = Genre(**row)
+                genres[obj.id] = obj
+            Genre.objects.bulk_create(objs=genres.values())
+        self.stdout.write(self.style.NOTICE(f'{path} done...'))
+
+        path = get_file_path('titles.csv')
+        with open(path, encoding='utf-8', newline='') as csvfile:
+            for row in csv.DictReader(csvfile):
+                row['category'] = categories[row['category']]
+                obj = Title(**row)
+                titles[obj.id] = obj
+            Title.objects.bulk_create(objs=titles.values())
+        self.stdout.write(self.style.NOTICE(f'{path} done...'))
+
+        path = get_file_path('genre_title.csv')
+        with open(path, encoding='utf-8', newline='') as csvfile:
+            objs = [
+                GenreTitle(
+                    id=row['id'],
+                    genre=genres[row['genre_id']],
+                    title=titles[row['title_id']]
+                )
+                for row in csv.DictReader(csvfile)
+            ]
+            GenreTitle.objects.bulk_create(objs=objs)
+        self.stdout.write(self.style.NOTICE(f'{path} done...'))
+
+        path = get_file_path('review.csv')
+        with open(path, encoding='utf-8', newline='') as csvfile:
+            for row in csv.DictReader(csvfile):
+                row['title'] = titles[row['title_id']]
+                row['author'] = users[row['author']]
+                obj = Review(**row)
+                reviews[obj.id] = obj
+            Review.objects.bulk_create(objs=reviews.values())
+        self.stdout.write(self.style.NOTICE(f'{path} done...'))
+
+        path = get_file_path('comments.csv')
+        with open(path, encoding='utf-8', newline='') as csvfile:
+            objs = []
+            for row in csv.DictReader(csvfile):
+                row['review'] = reviews[row['review_id']]
+                row['author'] = users[row['author']]
+                objs.append(Comment(**row))
+            Comment.objects.bulk_create(objs=objs)
+        self.stdout.write(self.style.NOTICE(f'{path} done...'))
