@@ -5,6 +5,7 @@ from titles.models import Title
 
 User = get_user_model()
 
+
 class TextPubDateModel(models.Model):
     """Abstract model for text and pub date."""
 
