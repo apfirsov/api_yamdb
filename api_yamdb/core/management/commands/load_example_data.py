@@ -1,6 +1,5 @@
 import csv
 import os
-from pprint import pprint
 
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand, CommandError
@@ -58,7 +57,6 @@ class Command(BaseCommand):
                 users[obj.id] = obj
         self.stdout.write(self.style.NOTICE(f'{path} done...'))
 
-        pprint(users)
         path = get_file_path('category.csv')
         with open(path, encoding='utf-8', newline='') as csvfile:
             for row in csv.DictReader(csvfile):
