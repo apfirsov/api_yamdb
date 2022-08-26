@@ -7,8 +7,6 @@ from .views import (
     TitleViewSet,
     CategoryViewSet,
 )
-
-
 v1_router = DefaultRouter()
 v1_router.register(
     r'titles/(?P<title_id>\d+)/reviews/(?P<review_id>\d+)/comments',
@@ -16,10 +14,10 @@ v1_router.register(
 v1_router.register(
     r'titles/(?P<title_id>\d+)/reviews', ReviewViewSet, basename='review'),
 
-# Урлы для теста кода, потом подвести под общий формат
-v1_router.register('genre', GenreViewSet)
-v1_router.register('title', TitleViewSet)
-v1_router.register('category', CategoryViewSet)
+
+v1_router.register('genre', GenreViewSet, basename='genre')
+v1_router.register('title', TitleViewSet, basename='title')
+v1_router.register('category', CategoryViewSet, basename='category')
 
 
 urlpatterns = [
