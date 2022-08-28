@@ -26,6 +26,8 @@ INSTALLED_APPS = [
     'rest_framework',
     'titles.apps.TitlesConfig',
     'reviews.apps.ReviewsConfig',
+    'core.apps.CoreConfig',
+    'django_filters',
 ]
 
 MIDDLEWARE = [
@@ -122,5 +124,3 @@ SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(days=10),
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
-
-# EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
