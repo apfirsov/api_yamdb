@@ -1,11 +1,8 @@
-from rest_framework import serializers
-from reviews.models import Comment, Review
-
 from django.contrib.auth.backends import ModelBackend
 from django.contrib.auth.tokens import default_token_generator
 from rest_framework import exceptions, serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-
+from reviews.models import Comment, Review
 from users.models import User
 
 
