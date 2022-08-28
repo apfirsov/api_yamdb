@@ -1,6 +1,8 @@
+import datetime as dt
 from rest_framework import serializers
 from reviews.models import Comment, Review
 from titles.models import Category, Genre, Title
+from django.core.validators import MaxValueValidator
 
 
 class ReviewSerializer(serializers.ModelSerializer):
@@ -45,10 +47,24 @@ class CategorySerializer(serializers.ModelSerializer):
 
 
 class TitleSerializer(serializers.ModelSerializer):
-    """CommTitleent model serializer."""
-    genre = GenreSerializer(many=True)
-    category = CategorySerializer()
+    """Title model serializer."""
+    genre = serializers.SlugRelatedField(
+        many=True,
+        queryset=Genre.objects.all(),
+        slug_field='slug'
+    )
+    category = serializers.SlugRelatedField(
+        queryset=Category.objects.all(),
+        slug_field='slug'
+    )
+    year = serializers.IntegerField(
+        validators=[MaxValueValidator(dt.date.today().year)]
+    )
+    rating = serializers.IntegerField(read_only=True, required=False)
 
     class Meta:
         model = Title
-        fields = '__all__'
+        fields = (
+            'id', 'name', 'year', 'description', 'genre',
+            'category', 'rating',
+        )

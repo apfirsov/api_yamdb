@@ -24,7 +24,7 @@ class Review(TextPubDateModel):
     """Review model class."""
 
     title = models.ForeignKey(
-        Title, on_delete=models.CASCADE, verbose_name='Произведение')
+        Title, related_name='reviews', on_delete=models.CASCADE, verbose_name='Произведение')
     author = models.ForeignKey(
         User, on_delete=models.CASCADE, verbose_name='Автор')
     score = models.PositiveSmallIntegerField(
