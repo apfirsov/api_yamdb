@@ -15,4 +15,5 @@ urlpatterns = [
         TokenView.as_view(),
         name='token_obtain_pair'
     ),
+    path('', include(router.urls))
 ]

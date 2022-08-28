@@ -1,4 +1,5 @@
 from api.permissions import IsAdmin
+from api.serializers import SignUpSerializer, TokenSerializer, UserSerializer
 from django.contrib.auth.tokens import default_token_generator
 from rest_framework import status, viewsets
 from rest_framework.decorators import action, api_view
@@ -6,7 +7,6 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenViewBase
 
 from .models import User
-from .serializers import SignUpSerializer, TokenSerializer, UserSerializer
 
 
 @api_view(['POST', ])
