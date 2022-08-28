@@ -9,7 +9,7 @@ from reviews.models import Comment, Review
 from titles.models import Title
 from users.models import User
 
-from .permissions import AuthorOrReadOnly, IsAdmin
+from .permissions import ReviewsCommentsPermission, IsAdmin
 from .serializers import (CommentSerializer, ReviewSerializer,
                           SignUpSerializer, TokenSerializer, UserSerializer)
 
@@ -19,7 +19,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
     queryset = Review.objects.all()
     serializer_class = ReviewSerializer
-    permission_classes = (AuthorOrReadOnly,)
+    permission_classes = (ReviewsCommentsPermission,)
     pagination_class = LimitOffsetPagination
 
     def get_queryset(self):
@@ -35,7 +35,7 @@ class CommentViewSet(viewsets.ModelViewSet):
     """Comment model view set."""
 
     serializer_class = CommentSerializer
-    permission_classes = (AuthorOrReadOnly,)
+    permission_classes = (ReviewsCommentsPermission,)
 
     def get_queryset(self):
         title_id = self.kwargs.get('title_id')
