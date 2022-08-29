@@ -122,9 +122,13 @@ class TokenView(TokenViewBase):
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
-    serializer_class = UserSerializer
     lookup_field = 'username'
     permission_classes = (IsAdmin, )
+
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return SignUpSerializer
+        return UserSerializer
 
     @action(detail=False, methods=['GET', 'PATCH'], name='My information')
     def me(self, request, *args, **kwargs):
