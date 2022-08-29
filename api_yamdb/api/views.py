@@ -98,6 +98,7 @@ def sign_up_view(request):
         instance = serializer.save()
         instance.set_password(instance.password)
         instance.save()
+        serializer.save()
         send_confirmation_code(user=instance)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
