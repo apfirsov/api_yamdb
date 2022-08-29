@@ -7,10 +7,8 @@ from .views import (
     TitleViewSet,
     CategoryViewSet,
 )
+from .views import (CommentViewSet, ReviewViewSet, TokenView, UserViewSet, SignupView)
 
-
-from .views import (CommentViewSet, ReviewViewSet, TokenView, UserViewSet,
-                    SignupView)
 
 v1_router = DefaultRouter()
 v1_router.register(

@@ -2,6 +2,7 @@ from django.contrib.auth.tokens import default_token_generator
 from rest_framework import filters, mixins, permissions, status, viewsets
 from rest_framework.decorators import action, api_view, APIView
 from django_filters.rest_framework import DjangoFilterBackend
+from django.core.mail import send_mail
 
 from rest_framework.generics import get_object_or_404
 from rest_framework.pagination import LimitOffsetPagination
@@ -108,9 +109,14 @@ class SignupView(APIView):
 
 def send_confirmation_code(user):
     confirmation_code = default_token_generator.make_token(user)
-    print('------look! a code!------')
-    print(confirmation_code)
-    print('-------------------------')
+    send_mail(
+        'Код подтверждения регистрации в api_yamdb',
+        f'''Имя пользователя: {user.username}
+confirmation_code: {confirmation_code}''',
+        'admin@yamdb.com',
+        [user.email],
+        fail_silently=False
+    )
 
 
 class TokenView(TokenViewBase):
@@ -119,9 +125,13 @@ class TokenView(TokenViewBase):
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
-    serializer_class = UserSerializer
     lookup_field = 'username'
     permission_classes = (IsAdmin, )
+
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return SignUpSerializer
+        return UserSerializer
 
     @action(detail=False, methods=['GET', 'PATCH'], name='My information')
     def me(self, request, *args, **kwargs):
