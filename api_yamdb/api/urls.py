@@ -10,7 +10,7 @@ from .views import (
 
 
 from .views import (CommentViewSet, ReviewViewSet, TokenView, UserViewSet,
-                    sign_up_view)
+                    sign_up_view) 
 
 v1_router = DefaultRouter()
 v1_router.register(
