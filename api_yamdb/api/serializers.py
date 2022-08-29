@@ -104,8 +104,8 @@ class TokenSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
         attrs.update({'password': ''})
         try:
-            username = list(attrs.items())[0][1]
-            confirmation_code = list(attrs.items())[1][1]
+            username = attrs['username']
+            confirmation_code = attrs['confirmation_code']
         except AttributeError:
             raise exceptions.AuthenticationFailed('invalid data')
         user = User.objects.get(username=username)
