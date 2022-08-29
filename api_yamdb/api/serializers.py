@@ -1,12 +1,14 @@
 import datetime as dt
-from django.contrib.auth.backends import ModelBackend
-from django.contrib.auth.tokens import default_token_generator
+
+from django.contrib.auth import authenticate
+from django.contrib.auth.models import update_last_login
+from django.core.validators import MaxValueValidator
 from rest_framework import exceptions, serializers
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.settings import api_settings
+from rest_framework_simplejwt.tokens import RefreshToken
 from reviews.models import Comment, Review
 from titles.models import Category, Genre, Title
 from users.models import User
-from django.core.validators import MaxValueValidator
 
 
 class ReviewSerializer(serializers.ModelSerializer):
@@ -94,38 +96,61 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
 
 
-class TokenSerializer(TokenObtainPairSerializer):
+class CustomTokenSerializer(serializers.Serializer):
+    username_field = User.USERNAME_FIELD
+
+    default_error_messages = {
+        'no_active_account': ('No active account found '
+                              'with the given credentials')
+    }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['password'].required = False
+
+        self.fields[self.username_field] = serializers.CharField()
         self.fields['confirmation_code'] = serializers.CharField()
 
     def validate(self, attrs):
-        attrs.update({'password': ''})
+        authenticate_kwargs = {
+            self.username_field: attrs[self.username_field],
+            'confirmation_code': attrs['confirmation_code'],
+        }
         try:
-            username = list(attrs.items())[0][1]
-            confirmation_code = list(attrs.items())[1][1]
-        except AttributeError:
-            raise exceptions.AuthenticationFailed('invalid data')
-        user = User.objects.get(username=username)
-        if default_token_generator.check_token(user, confirmation_code):
-            return super(TokenSerializer, self).validate(attrs)
-        raise exceptions.AuthenticationFailed('invalid confirmation code')
+            authenticate_kwargs['request'] = self.context['request']
+        except KeyError:
+            pass
+
+        self.user = authenticate(**authenticate_kwargs)
+
+        if not api_settings.USER_AUTHENTICATION_RULE(self.user):
+            raise exceptions.AuthenticationFailed(
+                self.error_messages['no_active_account'],
+                'no_active_account',
+            )
+
+        return {}
+
+    @classmethod
+    def get_token(cls, user):
+        raise NotImplementedError(
+            'Must implement `get_token` method '
+            'for `TokenObtainSerializer` subclasses')
 
 
-class AuthBackend(ModelBackend):
+class TokenSerializer(CustomTokenSerializer):
+    @classmethod
+    def get_token(cls, user):
+        return RefreshToken.for_user(user)
 
-    def authenticate(self, request, username=None):
-        if username is None:
-            username = request.data.get('username', '')
-        try:
-            return User.objects.get(username=username)
-        except User.DoesNotExist:
-            return None
+    def validate(self, attrs):
+        data = super().validate(attrs)
 
-    def get_user(self, user_id):
-        try:
-            return User.objects.get(pk=user_id)
-        except User.DoesNotExist:
-            return None
+        refresh = self.get_token(self.user)
+
+        data['refresh'] = str(refresh)
+        data['access'] = str(refresh.access_token)
+
+        if api_settings.UPDATE_LAST_LOGIN:
+            update_last_login(None, self.user)
+
+        return data
