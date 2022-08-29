@@ -10,7 +10,7 @@ from .views import (
 
 
 from .views import (CommentViewSet, ReviewViewSet, TokenView, UserViewSet,
-                    sign_up_view)
+                    SignupView)
 
 v1_router = DefaultRouter()
 v1_router.register(
@@ -27,7 +27,7 @@ urlpatterns = [
     path('v1/', include(v1_router.urls)),
     path(
         'v1/auth/signup/',
-        sign_up_view,
+        SignupView.as_view(),
         name='signup'),
     path(
         'v1/auth/token/',

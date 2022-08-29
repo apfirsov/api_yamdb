@@ -1,6 +1,6 @@
 from django.contrib.auth.tokens import default_token_generator
 from rest_framework import filters, mixins, permissions, status, viewsets
-from rest_framework.decorators import action, api_view
+from rest_framework.decorators import action, api_view, APIView
 from django_filters.rest_framework import DjangoFilterBackend
 
 from rest_framework.generics import get_object_or_404
@@ -9,7 +9,7 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenViewBase
 from reviews.models import Comment, Review
 from users.models import User
-from .permissions import ReviewsCommentsPermission, IsAdmin
+from .permissions import ReviewsCommentsPermission, IsAdmin, IsAdminOrReadOnly
 from titles.models import Category, Genre, Title
 from django.db.models import Avg
 from .serializers import (
@@ -64,7 +64,7 @@ class GenreViewSet(viewsets.ModelViewSet):
 
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
-    permission_classes = [permissions.AllowAny]
+    permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
 
@@ -74,7 +74,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
 
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    permission_classes = [permissions.AllowAny]
+    permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
 
@@ -90,16 +90,20 @@ class TitleViewSet(viewsets.ModelViewSet):
     filter_backends = (DjangoFilterBackend,)
     filterset_fields = ('category', 'genre', 'name', 'year')
 
-@api_view(['POST', ])
-def sign_up_view(request):
-    serializer = SignUpSerializer(data=request.data)
-    if serializer.is_valid():
-        instance = serializer.save()
-        instance.set_password(instance.password)
-        instance.save()
-        send_confirmation_code(user=instance)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class SignupView(APIView):
+
+    permission_classes = (permissions.AllowAny,)
+
+    def post(self, request):
+        serializer = SignUpSerializer(data=request.data)
+        if serializer.is_valid():
+            instance = serializer.save()
+            instance.set_password(instance.password)
+            instance.save()
+            send_confirmation_code(user=instance)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 def send_confirmation_code(user):
