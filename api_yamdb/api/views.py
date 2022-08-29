@@ -1,17 +1,27 @@
 from django.contrib.auth.tokens import default_token_generator
 from rest_framework import filters, mixins, permissions, status, viewsets
 from rest_framework.decorators import action, api_view
+from django_filters.rest_framework import DjangoFilterBackend
+
 from rest_framework.generics import get_object_or_404
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenViewBase
 from reviews.models import Comment, Review
-from titles.models import Title
 from users.models import User
-
-from .permissions import ReviewsCommentsPermission, IsAdmin
-from .serializers import (CommentSerializer, ReviewSerializer,
-                          SignUpSerializer, TokenSerializer, UserSerializer)
+from .permissions import AuthorOrReadOnly, ReviewsCommentsPermission, IsAdmin
+from titles.models import Category, Genre, Title
+from django.db.models import Avg
+from .serializers import (
+    CommentSerializer,
+    ReviewSerializer,
+    CategorySerializer,
+    GenreSerializer,
+    TitleSerializer,
+    SignUpSerializer,
+    TokenSerializer,
+    UserSerializer
+)
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
@@ -48,6 +58,37 @@ class CommentViewSet(viewsets.ModelViewSet):
         review = get_object_or_404(Review, id=review_id)
         serializer.save(author=self.request.user, review=review)
 
+
+class GenreViewSet(viewsets.ModelViewSet):
+    """Genre model view set."""
+
+    queryset = Genre.objects.all()
+    serializer_class = GenreSerializer
+    permission_classes = [permissions.AllowAny]
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('name',)
+
+
+class CategoryViewSet(viewsets.ModelViewSet):
+    """Category model view set."""
+
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+    permission_classes = [permissions.AllowAny]
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('name',)
+
+
+class TitleViewSet(viewsets.ModelViewSet):
+    """Title model view set."""
+
+    queryset = Title.objects.annotate(
+        rating=Avg('reviews__score'))
+    serializer_class = TitleSerializer
+    permission_classes = [permissions.AllowAny]
+    pagination_class = LimitOffsetPagination
+    filter_backends = (DjangoFilterBackend,)
+    filterset_fields = ('category', 'genre', 'name', 'year')
 
 @api_view(['POST', ])
 def sign_up_view(request):
