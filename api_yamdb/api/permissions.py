@@ -1,4 +1,5 @@
-from rest_framework.permissions import BasePermission, SAFE_METHODS
+from rest_framework.permissions import SAFE_METHODS, BasePermission
+from users.models import User
 
 
 class IsAdmin(BasePermission):
@@ -8,7 +9,7 @@ class IsAdmin(BasePermission):
         return (request.user.is_superuser
                 or (request.user
                     and request.user.is_authenticated
-                    and request.user.role == 'admin')
+                    and request.user.role == User.ADMIN)
                 )
 
 
@@ -20,7 +21,7 @@ class IsAdminOrReadOnly(BasePermission):
                 or request.user.is_superuser
                 or (request.user
                     and request.user.is_authenticated
-                    and request.user.role == 'admin')
+                    and request.user.role == User.ADMIN)
                 )
 
 
@@ -33,7 +34,7 @@ class IsAuthorOrAdmin(BasePermission):
     def has_object_permission(self, request, view, obj):
         return (obj.author == request.user
                 or request.user.is_superuser
-                or request.user.role == 'admin')
+                or request.user.role == User.ADMIN)
 
 
 class ReviewsCommentsPermission(BasePermission):
@@ -43,14 +44,12 @@ class ReviewsCommentsPermission(BasePermission):
         SAFE методы доступны всем '''
 
     def has_permission(self, request, view):
-        if request.method == 'POST':
-            return request.user.is_authenticated
-        return True
+        return (request.method in SAFE_METHODS
+                or request.user.is_authenticated)
 
     def has_object_permission(self, request, view, obj):
-        if request.method in ['PATCH', 'DELETE']:
-            return (obj.author == request.user
+        return (request.method in SAFE_METHODS
+                or (obj.author == request.user
                     or request.user.is_superuser
-                    or request.user.role in ['admin', 'moderator']
-                    )
-        return True
+                    or request.user.role in [User.ADMIN, User.MODERATOR])
+                )

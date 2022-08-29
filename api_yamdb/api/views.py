@@ -51,18 +51,14 @@ class CommentViewSet(viewsets.ModelViewSet):
 
 @api_view(['POST', ])
 def sign_up_view(request):
-    if request.method == 'POST':
-        serializer = SignUpSerializer(data=request.data)
-        if serializer.is_valid():
-            instance = serializer.save()
-            instance.set_password(instance.password)
-            instance.save()
-            user = User.objects.get(
-                username=request.data['username']
-            )
-            send_confirmation_code(user=user)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    serializer = SignUpSerializer(data=request.data)
+    if serializer.is_valid():
+        instance = serializer.save()
+        instance.set_password(instance.password)
+        instance.save()
+        send_confirmation_code(user=instance)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 def send_confirmation_code(user):
@@ -84,12 +80,12 @@ class UserViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['GET', 'PATCH'], name='My information')
     def me(self, request, *args, **kwargs):
-        me = User.objects.get(username=request.user)
+        my_user_instance = User.objects.get(username=request.user)
         if request.method == 'GET':
-            serializer = self.get_serializer(me)
+            serializer = self.get_serializer(my_user_instance)
             return Response(serializer.data)
         serializer = self.get_serializer(
-            me,
+            my_user_instance,
             data=request.data,
             partial=True
         )
