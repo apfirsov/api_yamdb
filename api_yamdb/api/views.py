@@ -2,6 +2,7 @@ from django.contrib.auth.tokens import default_token_generator
 from rest_framework import filters, mixins, permissions, status, viewsets
 from rest_framework.decorators import action, api_view
 from django_filters.rest_framework import DjangoFilterBackend
+from django.core.mail import send_mail
 
 from rest_framework.generics import get_object_or_404
 from rest_framework.pagination import LimitOffsetPagination
@@ -104,9 +105,14 @@ def sign_up_view(request):
 
 def send_confirmation_code(user):
     confirmation_code = default_token_generator.make_token(user)
-    print('------look! a code!------')
-    print(confirmation_code)
-    print('-------------------------')
+    send_mail(
+        'Код подтверждения регистрации в api_yamdb',
+        f'''Имя пользователя: {user.username}
+confirmation_code: {confirmation_code}''',
+        'admin@yamdb.com',
+        [user.email],
+        fail_silently=False
+    )
 
 
 class TokenView(TokenViewBase):
