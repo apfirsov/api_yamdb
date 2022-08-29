@@ -9,7 +9,7 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenViewBase
 from reviews.models import Comment, Review
 from users.models import User
-from .permissions import AuthorOrReadOnly, ReviewsCommentsPermission, IsAdmin
+from .permissions import ReviewsCommentsPermission, IsAdmin
 from titles.models import Category, Genre, Title
 from django.db.models import Avg
 from .serializers import (
