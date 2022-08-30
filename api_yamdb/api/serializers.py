@@ -3,7 +3,7 @@ import datetime as dt
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import update_last_login
 from django.core.validators import MaxValueValidator
-from rest_framework import exceptions, serializers
+from rest_framework import exceptions, validators, serializers
 from rest_framework_simplejwt.settings import api_settings
 from rest_framework_simplejwt.tokens import RefreshToken
 from reviews.models import Comment, Review
@@ -15,13 +15,23 @@ class ReviewSerializer(serializers.ModelSerializer):
     """Review model serializer."""
 
     author = serializers.SlugRelatedField(
-        read_only=True, slug_field='username'
+        read_only=True,
+        slug_field='username',
+        default=serializers.CurrentUserDefault()
     )
 
     class Meta:
         model = Review
-        fields = ('id', 'text', 'author', 'pub_date')
+        fields = ('title', 'id', 'text', 'author', 'score', 'pub_date')
+        read_only_fields = ('title', 'author')
 
+    def create(self, validated_data):
+        if validated_data['author'].reviews.filter(
+                title=validated_data['title']).exists():
+            raise serializers.ValidationError(
+                'Можно оставить только один отзыв')
+
+        return super().create(validated_data)
 
 class CommentSerializer(serializers.ModelSerializer):
     """Comment model serializer."""
@@ -92,7 +102,8 @@ class SignUpSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
-        fields = '__all__'
+        fields = (
+            'username', 'email', 'first_name', 'last_name', 'bio', 'role')
         model = User
 
 
