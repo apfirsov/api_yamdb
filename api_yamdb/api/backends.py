@@ -1,5 +1,6 @@
 from django.contrib.auth.backends import ModelBackend
 from django.contrib.auth.tokens import default_token_generator
+from rest_framework import exceptions
 from users.models import User
 
 
@@ -9,7 +10,7 @@ class AuthBackend(ModelBackend):
         try:
             user = User.objects.get(username=username)
         except User.DoesNotExist:
-            return None
+            raise exceptions.NotFound('djkhgjdghdkj')
         if default_token_generator.check_token(user, confirmation_code):
             return user
         return None
