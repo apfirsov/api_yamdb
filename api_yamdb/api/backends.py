@@ -10,7 +10,7 @@ class AuthBackend(ModelBackend):
         try:
             user = User.objects.get(username=username)
         except User.DoesNotExist:
-            raise exceptions.NotFound('djkhgjdghdkj')
+            raise exceptions.NotFound('Пользователь не найден')
         if default_token_generator.check_token(user, confirmation_code):
             return user
         return None
