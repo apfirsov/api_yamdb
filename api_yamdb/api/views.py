@@ -1,6 +1,6 @@
 from django.contrib.auth.tokens import default_token_generator
 from rest_framework import filters, mixins, permissions, status, viewsets
-from rest_framework.decorators import action, api_view, APIView
+from rest_framework.decorators import action, APIView
 from django_filters.rest_framework import DjangoFilterBackend
 from django.core.mail import send_mail
 
@@ -10,7 +10,8 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenViewBase
 from reviews.models import Comment, Review
 from users.models import User
-from .permissions import ReviewsCommentsPermission, IsAdmin, IsAdminOrReadOnly
+from .permissions import (
+    AuthorOrStaffOrReadOnly, IsUserOrAdmin, IsAdmin, IsAdminOrReadOnly)
 from titles.models import Category, Genre, Title
 from django.db.models import Avg
 from .serializers import (
@@ -29,7 +30,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
     """Review model view set."""
 
     serializer_class = ReviewSerializer
-    permission_classes = (ReviewsCommentsPermission,)
+    permission_classes = (AuthorOrStaffOrReadOnly,)
     pagination_class = LimitOffsetPagination
 
     def get_queryset(self):
@@ -47,7 +48,7 @@ class CommentViewSet(viewsets.ModelViewSet):
     """Comment model view set."""
 
     serializer_class = CommentSerializer
-    permission_classes = (ReviewsCommentsPermission,)
+    permission_classes = (AuthorOrStaffOrReadOnly,)
 
     def get_queryset(self):
         title_id = self.kwargs.get('title_id')
@@ -87,7 +88,7 @@ class TitleViewSet(viewsets.ModelViewSet):
     queryset = Title.objects.annotate(
         rating=Avg('reviews__score'))
     serializer_class = TitleSerializer
-    permission_classes = [permissions.AllowAny]
+    permission_classes = (IsAdminOrReadOnly,)
     pagination_class = LimitOffsetPagination
     filter_backends = (DjangoFilterBackend,)
     filterset_fields = ('category', 'genre', 'name', 'year')
@@ -137,6 +138,10 @@ class UserViewSet(viewsets.ModelViewSet):
     lookup_field = 'username'
     permission_classes = (IsAdmin, )
 
+    def get_permissions(self):
+        if self.action == 'me':
+            return (IsUserOrAdmin(),)
+        return super().get_permissions()
 
     @action(detail=False, methods=['GET', 'PATCH'], name='My information')
     def me(self, request, *args, **kwargs):

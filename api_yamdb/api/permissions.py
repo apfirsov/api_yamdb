@@ -15,34 +15,38 @@ class IsAdmin(BasePermission):
 
 
 class IsAdminOrReadOnly(BasePermission):
-    ''' Categories, Genres, Titles '''
+    ''' ... '''
 
     def has_permission(self, request, view):
-        return (request.method in SAFE_METHODS
-                or request.user.is_superuser
-                or (request.user
-                    and request.user.is_authenticated
-                    and request.user.role == User.ADMIN)
-                )
+        if request.method in SAFE_METHODS:
+            return True
+
+        return request.user.is_authenticated and (
+                request.user.is_superuser or request.user.role == User.ADMIN)
 
 
-class IsAuthorOrAdmin(BasePermission):
+    def has_object_permission(self, request, view, obj):
+        if request.method in SAFE_METHODS:
+            return True
+
+        return (request.user.is_superuser
+                or request.user.role == User.ADMIN)
+
+
+class IsUserOrAdmin(BasePermission):
     ''' users/me '''
 
     def has_permission(self, request, view):
         return request.user.is_authenticated
 
     def has_object_permission(self, request, view, obj):
-        return (obj.author == request.user
+        return (obj == request.user
                 or request.user.is_superuser
                 or request.user.role == User.ADMIN)
 
 
-class ReviewsCommentsPermission(BasePermission):
-    ''' Reviews, Comments.
-        Юзеру доступен метод POST
-        Автору, админу и модератору доступны методы PATCH, DELETE
-        SAFE методы доступны всем '''
+class AuthorOrStaffOrReadOnly(BasePermission):
+    ''' ... '''
 
     def has_permission(self, request, view):
         return (request.method in SAFE_METHODS
