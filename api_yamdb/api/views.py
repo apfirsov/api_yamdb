@@ -1,6 +1,6 @@
 from django.contrib.auth.tokens import default_token_generator
 from rest_framework import filters, mixins, permissions, status, viewsets
-from rest_framework.decorators import action, api_view, APIView
+from rest_framework.decorators import action, APIView
 from django_filters.rest_framework import DjangoFilterBackend
 from django.core.mail import send_mail
 
@@ -10,7 +10,8 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenViewBase
 from reviews.models import Comment, Review
 from users.models import User
-from .permissions import ReviewsCommentsPermission, IsAdmin, IsAdminOrReadOnly
+from .permissions import (
+    AuthorOrStaffOrReadOnly, IsUserOrAdmin, IsAdmin, IsAdminOrReadOnly)
 from titles.models import Category, Genre, Title
 from django.db.models import Avg
 from .serializers import (
@@ -26,33 +27,34 @@ from .serializers import (
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
-    """Post model view set."""
+    """Review model view set."""
 
-    queryset = Review.objects.all()
     serializer_class = ReviewSerializer
-    permission_classes = (ReviewsCommentsPermission,)
+    permission_classes = (AuthorOrStaffOrReadOnly,)
     pagination_class = LimitOffsetPagination
 
     def get_queryset(self):
         title_id = self.kwargs.get('title_id')
         title = get_object_or_404(Title, id=title_id)
-        return title.reviews
+        return title.reviews.all()
 
     def perform_create(self, serializer):
-        serializer.save(author=self.request.user)
+        title_id = self.kwargs.get('title_id')
+        title = get_object_or_404(Title, id=title_id)
+        serializer.save(author=self.request.user, title=title)
 
 
 class CommentViewSet(viewsets.ModelViewSet):
     """Comment model view set."""
 
     serializer_class = CommentSerializer
-    permission_classes = (ReviewsCommentsPermission,)
+    permission_classes = (AuthorOrStaffOrReadOnly,)
 
     def get_queryset(self):
         title_id = self.kwargs.get('title_id')
         review_id = self.kwargs.get('review_id')
         review = get_object_or_404(Review, title__id=title_id, id=review_id)
-        return review.comments
+        return review.comments.all()
 
     def perform_create(self, serializer):
         review_id = self.kwargs.get('review_id')
@@ -86,7 +88,7 @@ class TitleViewSet(viewsets.ModelViewSet):
     queryset = Title.objects.annotate(
         rating=Avg('reviews__score'))
     serializer_class = TitleSerializer
-    permission_classes = [permissions.AllowAny]
+    permission_classes = (IsAdminOrReadOnly,)
     pagination_class = LimitOffsetPagination
     filter_backends = (DjangoFilterBackend,)
     filterset_fields = ('category', 'genre', 'name', 'year')
@@ -97,11 +99,18 @@ class SignupView(APIView):
     permission_classes = (permissions.AllowAny,)
 
     def post(self, request):
-        serializer = SignUpSerializer(data=request.data)
+        username = request.data.get('username')
+        email = request.data.get('email')
+
+        if username and email:
+            instance = User.objects.filter(
+                username=username, email=email).first()
+        else:
+            instance = None
+
+        serializer = SignUpSerializer(instance, data=request.data)
         if serializer.is_valid():
             instance = serializer.save()
-            instance.set_password(instance.password)
-            instance.save()
             send_confirmation_code(user=instance)
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -124,14 +133,15 @@ class TokenView(TokenViewBase):
 
 
 class UserViewSet(viewsets.ModelViewSet):
+    serializer_class = UserSerializer
     queryset = User.objects.all()
     lookup_field = 'username'
     permission_classes = (IsAdmin, )
 
-    def get_serializer_class(self):
-        if self.action == 'create':
-            return SignUpSerializer
-        return UserSerializer
+    def get_permissions(self):
+        if self.action == 'me':
+            return (IsUserOrAdmin(),)
+        return super().get_permissions()
 
     @action(detail=False, methods=['GET', 'PATCH'], name='My information')
     def me(self, request, *args, **kwargs):
