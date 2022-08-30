@@ -99,7 +99,16 @@ class SignUpSerializer(serializers.ModelSerializer):
         return data
 
 
-class UserSerializer(serializers.ModelSerializer):
+class UserBaseSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        fields = (
+            'username', 'email', 'first_name', 'last_name', 'bio', 'role')
+        read_only_fields = ('role',)
+        model = User
+
+
+class UserAdminSerializer(serializers.ModelSerializer):
 
     class Meta:
         fields = (
