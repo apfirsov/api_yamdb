@@ -33,6 +33,7 @@ class ReviewSerializer(serializers.ModelSerializer):
 
         return super().create(validated_data)
 
+
 class CommentSerializer(serializers.ModelSerializer):
     """Comment model serializer."""
 
@@ -51,7 +52,7 @@ class GenreSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Genre
-        fields = '__all__'
+        fields = ('name', 'slug')
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -59,11 +60,11 @@ class CategorySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Category
-        fields = '__all__'
+        fields = ('name', 'slug')
 
 
-class TitleSerializer(serializers.ModelSerializer):
-    """Title model serializer."""
+class TitlePostSerializer(serializers.ModelSerializer):
+    """Title Post model serializer."""
     genre = serializers.SlugRelatedField(
         many=True,
         queryset=Genre.objects.all(),
@@ -84,6 +85,21 @@ class TitleSerializer(serializers.ModelSerializer):
             'id', 'name', 'year', 'description', 'genre',
             'category', 'rating',
         )
+
+
+class TitleGetSerializer(serializers.ModelSerializer):
+    """Title Get model serializer."""
+    category = CategorySerializer(read_only=True)
+    genre = GenreSerializer(many=True)
+    rating = serializers.IntegerField(read_only=True, required=False)
+
+    class Meta:
+        model = Title
+        fields = (
+            'id', 'name', 'year', 'description', 'genre',
+            'category', 'rating',
+        )
+        read_only_fields = ('__all__',)
 
 
 class SignUpSerializer(serializers.ModelSerializer):

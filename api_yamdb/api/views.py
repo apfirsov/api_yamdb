@@ -1,7 +1,7 @@
 from django.contrib.auth.tokens import default_token_generator
 from rest_framework import filters, mixins, permissions, status, viewsets
 from rest_framework.decorators import action, APIView
-from django_filters.rest_framework import DjangoFilterBackend
+from django_filters.rest_framework import FilterSet, DjangoFilterBackend
 from django.core.mail import send_mail
 
 from rest_framework.generics import get_object_or_404
@@ -19,10 +19,11 @@ from .serializers import (
     ReviewSerializer,
     CategorySerializer,
     GenreSerializer,
-    TitleSerializer,
     SignUpSerializer,
     TokenSerializer,
-    UserSerializer
+    UserSerializer,
+    TitlePostSerializer,
+    TitleGetSerializer
 )
 
 
@@ -62,7 +63,16 @@ class CommentViewSet(viewsets.ModelViewSet):
         serializer.save(author=self.request.user, review=review)
 
 
-class GenreViewSet(viewsets.ModelViewSet):
+class ListCreateDestroyViewSet(
+    mixins.ListModelMixin,
+    mixins.CreateModelMixin,
+    mixins.DestroyModelMixin,
+    viewsets.GenericViewSet
+):
+    pass
+
+
+class GenreViewSet(ListCreateDestroyViewSet):
     """Genre model view set."""
 
     queryset = Genre.objects.all()
@@ -70,9 +80,10 @@ class GenreViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
+    lookup_field = 'slug'
 
 
-class CategoryViewSet(viewsets.ModelViewSet):
+class CategoryViewSet(ListCreateDestroyViewSet):
     """Category model view set."""
 
     queryset = Category.objects.all()
@@ -80,6 +91,11 @@ class CategoryViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
+    lookup_field = 'slug'
+
+
+class TitleFilter(FilterSet):
+    pass
 
 
 class TitleViewSet(viewsets.ModelViewSet):
@@ -87,11 +103,17 @@ class TitleViewSet(viewsets.ModelViewSet):
 
     queryset = Title.objects.annotate(
         rating=Avg('reviews__score'))
-    serializer_class = TitleSerializer
     permission_classes = (IsAdminOrReadOnly,)
     pagination_class = LimitOffsetPagination
     filter_backends = (DjangoFilterBackend,)
-    filterset_fields = ('category', 'genre', 'name', 'year')
+    # filterset_fields = ('category', 'genre__slug', 'name', 'year')
+    filterset_class = TitleFilter
+
+
+    def get_serializer_class(self):
+        if self.request.method in ('POST', 'PATCH'):
+            return TitlePostSerializer
+        return TitleGetSerializer
 
 
 class SignupView(APIView):
