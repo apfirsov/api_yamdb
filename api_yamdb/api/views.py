@@ -136,21 +136,19 @@ class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
     queryset = User.objects.all()
     lookup_field = 'username'
-    permission_classes = (IsAdmin, )
+    permission_classes = (IsAdmin,)
 
-    def get_permissions(self):
-        if self.action == 'me':
-            return (IsUserOrAdmin(),)
-        return super().get_permissions()
-
-    @action(detail=False, methods=['GET', 'PATCH'], name='My information')
-    def me(self, request, *args, **kwargs):
-        my_user_instance = User.objects.get(username=request.user)
+    @action(detail=False,
+            methods=['GET', 'PATCH'],
+            permission_classes=(IsUserOrAdmin,),
+            name='My information'
+            )
+    def me(self, request):
         if request.method == 'GET':
-            serializer = self.get_serializer(my_user_instance)
+            serializer = self.get_serializer(request.user)
             return Response(serializer.data)
         serializer = self.get_serializer(
-            my_user_instance,
+            request.user,
             data=request.data,
             partial=True
         )

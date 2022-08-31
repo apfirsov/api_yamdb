@@ -101,6 +101,13 @@ class SignUpSerializer(serializers.ModelSerializer):
 
 class UserSerializer(serializers.ModelSerializer):
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        current_user = self.context['request'].user
+        if not (current_user.is_superuser
+                or current_user.role == User.ADMIN):
+            self.fields['role'].read_only = True
+
     class Meta:
         fields = (
             'username', 'email', 'first_name', 'last_name', 'bio', 'role')
@@ -134,7 +141,7 @@ class CustomTokenSerializer(serializers.Serializer):
         self.user = authenticate(**authenticate_kwargs)
 
         if not api_settings.USER_AUTHENTICATION_RULE(self.user):
-            raise exceptions.AuthenticationFailed(
+            raise exceptions.ParseError(
                 self.error_messages['no_active_account'],
                 'no_active_account',
             )
