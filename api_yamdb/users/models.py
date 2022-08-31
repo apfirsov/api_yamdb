@@ -3,6 +3,7 @@ from django.db import models
 
 
 class User(AbstractUser):
+    """User model class."""
 
     USER = 'user'
     MODERATOR = 'moderator'

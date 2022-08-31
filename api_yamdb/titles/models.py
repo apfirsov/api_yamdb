@@ -2,6 +2,8 @@ from django.db import models
 
 
 class Genre(models.Model):
+    """Genre model class."""
+
     name = models.CharField(max_length=256)
     slug = models.SlugField(unique=True)
 
@@ -14,6 +16,8 @@ class Genre(models.Model):
 
 
 class Category(models.Model):
+    """Category model class."""
+
     name = models.CharField(max_length=256)
     slug = models.SlugField(unique=True, max_length=50)
 
@@ -26,6 +30,8 @@ class Category(models.Model):
 
 
 class Title(models.Model):
+    """Title model class."""
+
     name = models.TextField()
     year = models.IntegerField()
     description = models.TextField(null=True, blank=True)
@@ -49,6 +55,8 @@ class Title(models.Model):
 
 
 class GenreTitle(models.Model):
+    """GenreTitle model class."""
+
     genre = models.ForeignKey(Genre, on_delete=models.CASCADE)
     title = models.ForeignKey(Title, on_delete=models.CASCADE)
 
