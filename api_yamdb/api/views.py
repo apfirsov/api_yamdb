@@ -22,8 +22,7 @@ from .serializers import (
     TitleSerializer,
     SignUpSerializer,
     TokenSerializer,
-    UserBaseSerializer,
-    UserAdminSerializer
+    UserSerializer
 )
 
 
@@ -134,14 +133,10 @@ class TokenView(TokenViewBase):
 
 
 class UserViewSet(viewsets.ModelViewSet):
+    serializer_class = UserSerializer
     queryset = User.objects.all()
     lookup_field = 'username'
     permission_classes = (IsAdmin,)
-
-    def get_serializer_class(self):
-        if self.request.user.role == 'user':
-            return UserBaseSerializer
-        return UserAdminSerializer
 
     @action(detail=False,
             methods=['GET', 'PATCH'],
