@@ -1,7 +1,12 @@
 from django.contrib.auth.tokens import default_token_generator
 from rest_framework import filters, mixins, permissions, status, viewsets
 from rest_framework.decorators import action, APIView
-from django_filters.rest_framework import FilterSet, DjangoFilterBackend
+from django_filters.rest_framework import (
+    CharFilter,
+    NumberFilter,
+    FilterSet,
+    DjangoFilterBackend
+)
 from django.core.mail import send_mail
 
 from rest_framework.generics import get_object_or_404
@@ -95,7 +100,25 @@ class CategoryViewSet(ListCreateDestroyViewSet):
 
 
 class TitleFilter(FilterSet):
-    pass
+    genre = CharFilter(
+        field_name='genre__slug',
+        lookup_expr='icontains'
+    )
+    category = CharFilter(
+        field_name='category__slug',
+        lookup_expr='icontains'
+    )
+    name = CharFilter(
+        field_name='name',
+        lookup_expr='icontains'
+    )
+    year = NumberFilter(
+        field_name='year',
+    )
+
+    class Meta:
+        model = Title
+        fields = '__all__'
 
 
 class TitleViewSet(viewsets.ModelViewSet):
@@ -106,9 +129,7 @@ class TitleViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAdminOrReadOnly,)
     pagination_class = LimitOffsetPagination
     filter_backends = (DjangoFilterBackend,)
-    # filterset_fields = ('category', 'genre__slug', 'name', 'year')
     filterset_class = TitleFilter
-
 
     def get_serializer_class(self):
         if self.request.method in ('POST', 'PATCH'):
