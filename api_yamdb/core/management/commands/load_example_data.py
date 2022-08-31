@@ -18,7 +18,7 @@ database with tables."""
 
 
 class Command(BaseCommand):
-    """Provide loading example data form /static/data to DB."""
+    """Provides loading example data form /static/data to DB."""
 
     help = "Loads example data from /static/data"
     requires_migrations_checks = True
