@@ -75,21 +75,20 @@ class SignUpSerializer(serializers.ModelSerializer):
 
 
 class UserSerializerForAdmin(serializers.ModelSerializer):
-    """User model serializer."""
+    """User model serializer for admin."""
 
     class Meta:
+        abstract = True
         fields = (
             'username', 'email', 'first_name', 'last_name', 'bio', 'role')
         model = User
+        unique = ('username', 'email')
 
 
-class UserSerializerForUser(serializers.ModelSerializer):
-    """User model serializer."""
+class UserSerializerForUser(UserSerializerForAdmin):
+    """User model serializer for user."""
 
-    class Meta:
-        fields = (
-            'username', 'email', 'first_name', 'last_name', 'bio', 'role')
-        model = User
+    class Meta(UserSerializerForAdmin.Meta):
         read_only_fields = ('role',)
 
 
