@@ -74,20 +74,23 @@ class SignUpSerializer(serializers.ModelSerializer):
         return data
 
 
-class UserSerializer(serializers.ModelSerializer):
+class UserSerializerForAdmin(serializers.ModelSerializer):
     """User model serializer."""
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        current_user = self.context['request'].user
-        if not (current_user.is_superuser
-                or current_user.role == User.ADMIN):
-            self.fields['role'].read_only = True
 
     class Meta:
         fields = (
             'username', 'email', 'first_name', 'last_name', 'bio', 'role')
         model = User
+
+
+class UserSerializerForUser(serializers.ModelSerializer):
+    """User model serializer."""
+
+    class Meta:
+        fields = (
+            'username', 'email', 'first_name', 'last_name', 'bio', 'role')
+        model = User
+        read_only_fields = ('role',)
 
 
 class CategorySerializer(serializers.ModelSerializer):
