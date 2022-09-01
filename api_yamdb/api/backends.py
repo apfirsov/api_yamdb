@@ -51,16 +51,19 @@ class TitleFilter(FilterSet):
         fields = '__all__'
 
 
-def send_confirmation_code(user):
-    """Sends an email verification code."""
+class Utils():
 
-    confirmation_code = default_token_generator.make_token(user)
+    def send_confirmation_code(user):
+        """Sends an email verification code."""
 
-    from_email = 'admin@yamdb.com'
-    subject = 'Код подтверждения регистрации в api_yamdb'
-    message = f'''
-    Имя пользователя: {user.username}
-    confirmation_code: {confirmation_code}
-    '''
+        confirmation_code = default_token_generator.make_token(user)
 
-    send_mail(subject, message, from_email, [user.email], fail_silently=False)
+        from_email = 'admin@yamdb.com'
+        subject = 'Код подтверждения регистрации в api_yamdb'
+        message = f'''
+        Имя пользователя: {user.username}
+        confirmation_code: {confirmation_code}
+        '''
+
+        send_mail(
+            subject, message, from_email, [user.email], fail_silently=False)

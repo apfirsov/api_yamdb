@@ -9,7 +9,7 @@ from rest_framework_simplejwt.views import TokenViewBase
 from reviews.models import Review
 from titles.models import Category, Genre, Title
 from users.models import User
-from .backends import TitleFilter, send_confirmation_code
+from .backends import TitleFilter, Utils
 from .permissions import (
     AuthorOrStaffOrReadOnly, IsAdmin, IsAdminOrReadOnly, IsUserOrAdmin)
 from .serializers import (
@@ -44,7 +44,7 @@ class SignupView(APIView):
         serializer = SignUpSerializer(instance, data=request.data)
         if serializer.is_valid():
             instance = serializer.save()
-            send_confirmation_code(user=instance)
+            Utils.send_confirmation_code(user=instance)
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
