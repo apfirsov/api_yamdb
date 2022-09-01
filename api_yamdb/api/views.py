@@ -38,11 +38,10 @@ class SignupView(APIView):
         if username and email:
             instance = User.objects.filter(
                 username=username, email=email).first()
-        else:
-            instance = None
+        instance = None
 
         serializer = SignUpSerializer(instance, data=request.data)
-        if serializer.is_valid():
+        if serializer.is_valid(raise_exception=True):
             instance = serializer.save()
             Utils.send_confirmation_code(user=instance)
             return Response(serializer.data, status=status.HTTP_200_OK)
