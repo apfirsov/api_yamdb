@@ -16,7 +16,7 @@ class TextPubDateModel(models.Model):
         abstract = True
 
     def __str__(self):
-        text_str_length = 15
+        text_str_length: int = 15
         return self.text[:text_str_length]
 
 
