@@ -1,10 +1,8 @@
 import datetime as dt
 from django.contrib.auth import authenticate
-from django.contrib.auth.models import update_last_login
 from django.core.validators import MaxValueValidator
 from rest_framework import exceptions, serializers
-from rest_framework_simplejwt.settings import api_settings
-from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.tokens import AccessToken
 from reviews.models import Comment, Review
 from titles.models import Category, Genre, Title
 from users.models import User
@@ -13,24 +11,25 @@ from users.models import User
 class TokenSerializer(serializers.Serializer):
     "Token serializer."
 
-    username_field = User.USERNAME_FIELD
+    username = serializers.CharField()
+    confirmation_code = serializers.CharField()
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        self.fields[self.username_field] = serializers.CharField()
-        self.fields['confirmation_code'] = serializers.CharField()
+    class Meta:
+        fields = ('username', 'confirmation_code')
 
     def validate(self, attrs):
         authenticate_kwargs = {
-            self.username_field: attrs[self.username_field],
+            'username': attrs['username'],
             'confirmation_code': attrs['confirmation_code'],
         }
 
         self.user = authenticate(**authenticate_kwargs)
 
-        if not api_settings.USER_AUTHENTICATION_RULE(self.user):
-            raise exceptions.ParseError('No active account found')
+        if not self.user:
+            raise exceptions.ParseError('Аккаунт не найден')
+
+        token = AccessToken.for_user(self.user)
+        return {'token': str(token)}
 
 
 class SignUpSerializer(serializers.ModelSerializer):
