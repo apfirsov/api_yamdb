@@ -17,7 +17,7 @@ class AuthBackend(ModelBackend):
         except User.DoesNotExist:
             raise exceptions.NotFound('Пользователь не найден')
         if not default_token_generator.check_token(user, confirmation_code):
-            raise exceptions.ParseError('Аккаунт не найден')
+            raise exceptions.ParseError('Введен неправильный код потверждения')
         return user
 
     def get_user(self, user_id):
