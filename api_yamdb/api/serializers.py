@@ -1,10 +1,10 @@
 import datetime as dt
 from django.contrib.auth import authenticate
 from django.core.validators import MaxValueValidator
-from rest_framework import exceptions, serializers
-from rest_framework_simplejwt.tokens import AccessToken
+from rest_framework import serializers
 from reviews.models import Comment, Review
 from titles.models import Category, Genre, Title
+from .backends import Utils
 from users.models import User
 
 
@@ -18,18 +18,12 @@ class TokenSerializer(serializers.Serializer):
         fields = ('username', 'confirmation_code')
 
     def validate(self, attrs):
-        authenticate_kwargs = {
-            'username': attrs['username'],
-            'confirmation_code': attrs['confirmation_code'],
-        }
+        user = authenticate(
+            username=attrs['username'],
+            confirmation_code=attrs['confirmation_code']
+        )
 
-        self.user = authenticate(**authenticate_kwargs)
-
-        if not self.user:
-            raise exceptions.ParseError('Аккаунт не найден')
-
-        token = AccessToken.for_user(self.user)
-        return {'token': str(token)}
+        return Utils.get_token(user)
 
 
 class SignUpSerializer(serializers.ModelSerializer):
