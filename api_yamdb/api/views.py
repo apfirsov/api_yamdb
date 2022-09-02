@@ -1,4 +1,5 @@
 from django.db.models import Avg
+from django.db.utils import IntegrityError
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, mixins, permissions, status, viewsets
 from rest_framework.decorators import action, APIView
@@ -35,17 +36,16 @@ class SignupView(APIView):
         username = request.data.get('username')
         email = request.data.get('email')
 
-        if username and email:
-            instance = User.objects.filter(
-                username=username, email=email).first()
-        instance = None
+        try:
+            instance, created = User.objects.get_or_create(
+                username=username, email=email)
+        except IntegrityError:
+            instance = None
 
         serializer = SignUpSerializer(instance, data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            instance = serializer.save()
-            Utils.send_confirmation_code(user=instance)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
+        Utils.send_confirmation_code(user=instance)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class TokenView(TokenViewBase):
