@@ -9,7 +9,7 @@ from rest_framework_simplejwt.views import TokenViewBase
 from reviews.models import Review
 from titles.models import Category, Genre, Title
 from users.models import User
-from .backends import TitleFilter, send_confirmation_code
+from .backends import TitleFilter, ConfirmationManager
 from .permissions import (
     AuthorOrStaffOrReadOnly, IsAdmin, IsAdminOrReadOnly, IsUserOrAdmin)
 from .serializers import (
@@ -17,11 +17,12 @@ from .serializers import (
     CommentSerializer,
     GenreSerializer,
     ReviewSerializer,
-    SignUpSerializer,
+    # SignUpSerializer,
     TitleReadSerializer,
     TitleSerializer,
     TokenSerializer,
-    UserSerializer,
+    UserSerializerForAdmin,
+    UserSerializerForUser
 )
 
 
@@ -31,21 +32,13 @@ class SignupView(APIView):
     permission_classes = (permissions.AllowAny,)
 
     def post(self, request):
-        username = request.data.get('username')
-        email = request.data.get('email')
-
-        if username and email:
-            instance = User.objects.filter(
-                username=username, email=email).first()
-        else:
-            instance = None
-
-        serializer = SignUpSerializer(instance, data=request.data)
-        if serializer.is_valid():
-            instance = serializer.save()
-            send_confirmation_code(user=instance)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer = UserSerializerForUser(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        instance, created = User.objects.get_or_create(
+            **serializer.validated_data
+        )
+        ConfirmationManager(user=instance).send_code()
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class TokenView(TokenViewBase):
@@ -57,10 +50,14 @@ class TokenView(TokenViewBase):
 class UserViewSet(viewsets.ModelViewSet):
     """User model view set."""
 
-    serializer_class = UserSerializer
     queryset = User.objects.all()
     lookup_field = 'username'
     permission_classes = (IsAdmin,)
+
+    def get_serializer_class(self):
+        if self.request.user.is_admin:
+            return UserSerializerForAdmin
+        return UserSerializerForUser
 
     @action(detail=False,
             methods=['GET', 'PATCH'],
