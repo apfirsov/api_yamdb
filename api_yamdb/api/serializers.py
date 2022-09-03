@@ -26,20 +26,6 @@ class TokenSerializer(serializers.Serializer):
         return ConfirmationManager(user).get_token()
 
 
-class SignUpSerializer(serializers.ModelSerializer):
-    """Signup user model serializer."""
-
-    class Meta:
-        fields = ('username', 'email')
-        model = User
-
-    def validate(self, data):
-        if data['username'] == 'me':
-            raise serializers.ValidationError(
-                'Используйте другое имя')
-        return data
-
-
 class UserSerializerForAdmin(serializers.ModelSerializer):
     """User model serializer for admin."""
 
@@ -48,6 +34,12 @@ class UserSerializerForAdmin(serializers.ModelSerializer):
             'username', 'email', 'first_name', 'last_name', 'bio', 'role')
         model = User
         unique = ('username', 'email')
+
+    def validate_username(self, username):
+        if username == 'me':
+            raise serializers.ValidationError(
+                'Используйте другое имя')
+        return username
 
 
 class UserSerializerForUser(UserSerializerForAdmin):

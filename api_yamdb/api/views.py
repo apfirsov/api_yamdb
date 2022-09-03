@@ -17,7 +17,7 @@ from .serializers import (
     CommentSerializer,
     GenreSerializer,
     ReviewSerializer,
-    SignUpSerializer,
+    # SignUpSerializer,
     TitleReadSerializer,
     TitleSerializer,
     TokenSerializer,
@@ -32,7 +32,7 @@ class SignupView(APIView):
     permission_classes = (permissions.AllowAny,)
 
     def post(self, request):
-        serializer = SignUpSerializer(data=request.data)
+        serializer = UserSerializerForUser(data=request.data)
         serializer.is_valid(raise_exception=True)
         instance, created = User.objects.get_or_create(
             **serializer.validated_data
