@@ -2,9 +2,9 @@ import datetime as dt
 from django.contrib.auth import authenticate
 from django.core.validators import MaxValueValidator
 from rest_framework import serializers
+from rest_framework_simplejwt.tokens import RefreshToken
 from reviews.models import Comment, Review
 from titles.models import Category, Genre, Title
-from .backends import ConfirmationManager
 from users.models import User
 
 
@@ -23,7 +23,12 @@ class TokenSerializer(serializers.Serializer):
             confirmation_code=attrs['confirmation_code']
         )
 
-        return ConfirmationManager(user).get_token()
+        token = RefreshToken.for_user(user)
+
+        return {
+            'refresh': str(token),
+            'access': str(token.access_token)
+        }
 
 
 class UserSerializerForAdmin(serializers.ModelSerializer):
@@ -120,13 +125,16 @@ class ReviewSerializer(serializers.ModelSerializer):
         fields = ('title', 'id', 'text', 'author', 'score', 'pub_date')
         read_only_fields = ('title', 'author')
 
-    def create(self, validated_data):
-        if validated_data['author'].reviews.filter(
-                title=validated_data['title']).exists():
+    def validate(self, attrs):
+        request = self.context['request']
+        if (request.method == 'POST'
+                and request.user.reviews.filter(
+                title__id=request.parser_context['kwargs']['title_id']
+                ).exists()):
             raise serializers.ValidationError(
                 'Можно оставить только один отзыв')
 
-        return super().create(validated_data)
+        return attrs
 
 
 class CommentSerializer(serializers.ModelSerializer):
