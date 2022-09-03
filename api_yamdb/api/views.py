@@ -10,7 +10,7 @@ from rest_framework_simplejwt.views import TokenViewBase
 from reviews.models import Review
 from titles.models import Category, Genre, Title
 from users.models import User
-from .backends import TitleFilter, Utils
+from .backends import TitleFilter, AuthenticationUtils
 from .permissions import (
     AuthorOrStaffOrReadOnly, IsAdmin, IsAdminOrReadOnly, IsUserOrAdmin)
 from .serializers import (

@@ -51,7 +51,7 @@ class TitleFilter(FilterSet):
         fields = '__all__'
 
 
-class Utils():
+class AuthenticationUtils():
 
     def send_confirmation_code(user):
         """Sends an email verification code."""
@@ -71,7 +71,9 @@ class Utils():
     def get_token(user):
         """Prints out JWT tokens to console."""
 
+        refresh = RefreshToken.for_user(user)
+
         data = {}
-        data['access'] = AccessToken.for_user(user)
-        data['refresh'] = RefreshToken.for_user(user)
+        data['refresh'] = str(refresh)
+        data['access'] = str(refresh.access_token)
         return data

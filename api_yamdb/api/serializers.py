@@ -4,7 +4,7 @@ from django.core.validators import MaxValueValidator
 from rest_framework import serializers
 from reviews.models import Comment, Review
 from titles.models import Category, Genre, Title
-from .backends import Utils
+from .backends import AuthenticationUtils
 from users.models import User
 
 
@@ -23,7 +23,7 @@ class TokenSerializer(serializers.Serializer):
             confirmation_code=attrs['confirmation_code']
         )
 
-        return Utils.get_token(user)
+        return AuthenticationUtils.get_token(user)
 
 
 class SignUpSerializer(serializers.ModelSerializer):
