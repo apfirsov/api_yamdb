@@ -1,4 +1,4 @@
-from django.urls import include, path, re_path
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 from .views import (
     CategoryViewSet,
@@ -12,8 +12,8 @@ from .views import (
 )
 
 auth_patterns = [
-    re_path('signup/', SignupView.as_view(), name='signup'),
-    re_path('token/', TokenView.as_view(), name='token_obtain')
+    path('signup/', SignupView.as_view(), name='signup'),
+    path('token/', TokenView.as_view(), name='token_obtain')
 ]
 
 router = DefaultRouter()
