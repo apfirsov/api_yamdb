@@ -3,9 +3,11 @@ from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django_filters.rest_framework import CharFilter, FilterSet, NumberFilter
 from rest_framework import exceptions
-from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
+from rest_framework_simplejwt.tokens import RefreshToken
 from titles.models import Title
 from users.models import User
+
+from dataclasses import dataclass
 
 
 class AuthBackend(ModelBackend):
@@ -51,27 +53,36 @@ class TitleFilter(FilterSet):
         fields = '__all__'
 
 
-class AuthenticationUtils():
+@dataclass
+class ConfirmationManager():
 
-    def send_confirmation_code(user):
-        """Sends an email verification code."""
+    user: User
 
-        confirmation_code = default_token_generator.make_token(user)
+    def get_message(self):
+        """Forms a message with confirmationn code to be sent."""
 
-        from_email = 'admin@yamdb.com'
-        subject = 'Код подтверждения регистрации в api_yamdb'
-        message = f'''
-        Имя пользователя: {user.username}
+        confirmation_code = default_token_generator.make_token(self.user)
+
+        data = {}
+        data['from_email'] = 'admin@yamdb.com'
+        data['subject'] = 'Код подтверждения регистрации в api_yamdb'
+        data['recipient_list'] = [self.user.email]
+        data['message'] = f'''
+        Имя пользователя: {self.user.username}
         confirmation_code: {confirmation_code}
         '''
+        return data
+
+    def send_code(self):
+        """Sends an email verification code."""
 
         send_mail(
-            subject, message, from_email, [user.email], fail_silently=False)
+            **self.get_message(), fail_silently=False)
 
-    def get_token(user):
+    def get_token(self):
         """Prints out JWT tokens to console."""
 
-        refresh = RefreshToken.for_user(user)
+        refresh = RefreshToken.for_user(self.user)
 
         data = {}
         data['refresh'] = str(refresh)

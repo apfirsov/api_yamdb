@@ -1,5 +1,4 @@
 from django.db.models import Avg
-from django.db.utils import IntegrityError
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, mixins, permissions, status, viewsets
 from rest_framework.decorators import action, APIView
@@ -10,7 +9,7 @@ from rest_framework_simplejwt.views import TokenViewBase
 from reviews.models import Review
 from titles.models import Category, Genre, Title
 from users.models import User
-from .backends import TitleFilter, AuthenticationUtils
+from .backends import TitleFilter, ConfirmationManager
 from .permissions import (
     AuthorOrStaffOrReadOnly, IsAdmin, IsAdminOrReadOnly, IsUserOrAdmin)
 from .serializers import (
@@ -33,18 +32,12 @@ class SignupView(APIView):
     permission_classes = (permissions.AllowAny,)
 
     def post(self, request):
-        username = request.data.get('username')
-        email = request.data.get('email')
-
-        try:
-            instance, created = User.objects.get_or_create(
-                username=username, email=email)
-        except IntegrityError:
-            instance = None
-
-        serializer = SignUpSerializer(instance, data=request.data)
+        serializer = SignUpSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        Utils.send_confirmation_code(user=instance)
+        instance, created = User.objects.get_or_create(
+            **serializer.validated_data
+        )
+        ConfirmationManager(user=instance).send_code()
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
