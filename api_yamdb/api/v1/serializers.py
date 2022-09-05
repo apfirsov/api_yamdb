@@ -1,9 +1,7 @@
 import datetime as dt
 from django.contrib.auth import authenticate
-from django.contrib.auth.models import update_last_login
 from django.core.validators import MaxValueValidator
-from rest_framework import exceptions, serializers
-from rest_framework_simplejwt.settings import api_settings
+from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken
 from reviews.models import Comment, Review
 from titles.models import Category, Genre, Title
@@ -13,81 +11,47 @@ from users.models import User
 class TokenSerializer(serializers.Serializer):
     "Token serializer."
 
-    username_field = User.USERNAME_FIELD
-
-    default_error_messages = {
-        'no_active_account': ('No active account found '
-                              'with the given credentials')
-    }
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        self.fields[self.username_field] = serializers.CharField()
-        self.fields['confirmation_code'] = serializers.CharField()
-
-    @classmethod
-    def get_token(cls, user):
-        return RefreshToken.for_user(user)
-
-    def validate(self, attrs):
-        authenticate_kwargs = {
-            self.username_field: attrs[self.username_field],
-            'confirmation_code': attrs['confirmation_code'],
-        }
-        try:
-            authenticate_kwargs['request'] = self.context['request']
-        except KeyError:
-            pass
-
-        self.user = authenticate(**authenticate_kwargs)
-
-        if not api_settings.USER_AUTHENTICATION_RULE(self.user):
-            raise exceptions.ParseError(
-                self.error_messages['no_active_account'],
-                'no_active_account',
-            )
-
-        refresh = self.get_token(self.user)
-
-        data = {}
-        data['refresh'] = str(refresh)
-        data['access'] = str(refresh.access_token)
-
-        if api_settings.UPDATE_LAST_LOGIN:
-            update_last_login(None, self.user)
-
-        return data
-
-
-class SignUpSerializer(serializers.ModelSerializer):
-    """Signup user model serializer."""
+    username = serializers.CharField()
+    confirmation_code = serializers.CharField()
 
     class Meta:
-        fields = ('username', 'email')
-        model = User
+        fields = ('username', 'confirmation_code')
 
-    def validate(self, data):
-        if data['username'] == 'me':
-            raise serializers.ValidationError(
-                'Используйте другое имя')
-        return data
+    def validate(self, attrs):
+        user = authenticate(
+            username=attrs['username'],
+            confirmation_code=attrs['confirmation_code']
+        )
+
+        token = RefreshToken.for_user(user)
+
+        return {
+            'refresh': str(token),
+            'access': str(token.access_token)
+        }
 
 
-class UserSerializer(serializers.ModelSerializer):
-    """User model serializer."""
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        current_user = self.context['request'].user
-        if not (current_user.is_superuser
-                or current_user.role == User.ADMIN):
-            self.fields['role'].read_only = True
+class UserSerializerForAdmin(serializers.ModelSerializer):
+    """User model serializer for admin."""
 
     class Meta:
         fields = (
             'username', 'email', 'first_name', 'last_name', 'bio', 'role')
         model = User
+        unique = ('username', 'email')
+
+    def validate_username(self, username):
+        if username == 'me':
+            raise serializers.ValidationError(
+                'Используйте другое имя')
+        return username
+
+
+class UserSerializerForUser(UserSerializerForAdmin):
+    """User model serializer for user."""
+
+    class Meta(UserSerializerForAdmin.Meta):
+        read_only_fields = ('role',)
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -161,13 +125,16 @@ class ReviewSerializer(serializers.ModelSerializer):
         fields = ('title', 'id', 'text', 'author', 'score', 'pub_date')
         read_only_fields = ('title', 'author')
 
-    def create(self, validated_data):
-        if validated_data['author'].reviews.filter(
-                title=validated_data['title']).exists():
+    def validate(self, attrs):
+        request = self.context['request']
+        if (request.method == 'POST'
+                and request.user.reviews.filter(
+                title__id=request.parser_context['kwargs']['title_id']
+                ).exists()):
             raise serializers.ValidationError(
                 'Можно оставить только один отзыв')
 
-        return super().create(validated_data)
+        return attrs
 
 
 class CommentSerializer(serializers.ModelSerializer):
