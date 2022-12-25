@@ -3,6 +3,7 @@ from django.db import models
 
 
 class User(AbstractUser):
+    """User model class."""
 
     USER = 'user'
     MODERATOR = 'moderator'
@@ -35,3 +36,14 @@ class User(AbstractUser):
         'Биография',
         blank=True,
     )
+
+    @property
+    def is_admin(self):
+        return (self.is_superuser
+                or self.is_staff
+                or self.role == self.ADMIN)
+
+    @property
+    def is_moderator(self):
+        return (self.is_admin
+                or self.role == self.MODERATOR)

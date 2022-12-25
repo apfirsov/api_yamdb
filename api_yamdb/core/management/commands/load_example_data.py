@@ -1,13 +1,11 @@
 import csv
 import os
 
-from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
-from titles.models import Categorie as Category, Genre, GenreTitle, Title
+from titles.models import Category, Genre, GenreTitle, Title
 from reviews.models import Comment, Review
-
-User = get_user_model()
+from users.models import User
 
 
 ALREDY_LOADED_ERROR_MESSAGE = """
@@ -18,7 +16,7 @@ database with tables."""
 
 
 class Command(BaseCommand):
-    """Provide loading example data form /static/data to DB."""
+    """Provides loading example data form /static/data to DB."""
 
     help = "Loads example data from /static/data"
     requires_migrations_checks = True
